@@ -23,15 +23,16 @@ func (r *Repository) CreateContactOrUpsertTags(c *Contact) (int64, error) {
 		return 0, err
 	}
 
-	if existingContact.Email != "" && len(c.Tags) == 0 {
-		return 0, fmt.Errorf("email already exists")
-	}
+	if existingContact != nil {
 
-	if existingContact.Email != "" && len(c.Tags) > 0 {
+		if len(c.Tags) == 0 {
+			return 0, fmt.Errorf("email already exists")
+		}
+
 		// only tags upserts
 		txn, err := r.db.Begin()
 		if err != nil {
-			return 0, fmt.Errorf("failed to start the transaction")
+			return 0, fmt.Errorf("failed to start the transaction: %w", err)
 		}
 		defer txn.Rollback()
 
@@ -56,10 +57,10 @@ func (r *Repository) CreateContactOrUpsertTags(c *Contact) (int64, error) {
 		}
 
 		return existingContact.ID, nil
+
 	}
 
 	// create contact
-
 	txn, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -95,7 +96,7 @@ func (r *Repository) CreateContactOrUpsertTags(c *Contact) (int64, error) {
 	return lastId, nil
 }
 
-func (r *Repository) GetByEmail(email string) (Contact, error) {
+func (r *Repository) GetByEmail(email string) (*Contact, error) {
 	query := `
 		SELECT
 			id,
@@ -122,17 +123,17 @@ func (r *Repository) GetByEmail(email string) (Contact, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return Contact{}, nil
+			return nil, nil
 		}
 
-		return Contact{}, err
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 func insertTagIfNotExist(txn *sql.Tx, tags []Tag) error {
-	// todo: do this in a single query.
+	// todo: implement bulk inserts here
 	for _, tag := range tags {
 		_, err := txn.Exec(`INSERT OR IGNORE INTO tags (text) VALUES (?)`, tag.Text)
 		if err != nil {
