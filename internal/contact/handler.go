@@ -3,7 +3,6 @@ package contact
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -17,40 +16,27 @@ func NewHandler(repo *Repository) *Handler {
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
-	var contact Contact
+	var contactBody Contact
 
-	if err := json.NewDecoder(r.Body).Decode(&contact); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&contactBody); err != nil {
 		fmt.Println(err)
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
 
-	// check if email already exists
-	existingContact, err := h.repo.GetByEmail(contact.Email)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
-	if existingContact.Email != "" {
-		w.WriteHeader(http.StatusConflict)
-
+	createdId, err := h.repo.CreateOrUpsertTags(&contactBody)
+	if err != nil {
 		resp := map[string]string{
-			"message": "email already exists.",
+			"message": err.Error(),
 		}
-
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(resp)
 		return
 	}
 
-	createdId, err := h.repo.Create(&contact)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	w.WriteHeader(http.StatusCreated)
-
 	resp := map[string]int64{
 		"id": createdId,
 	}

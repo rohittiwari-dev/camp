@@ -21,7 +21,7 @@ func RunMigration(db *sql.DB) error {
 		`
 			CREATE TABLE IF NOT EXISTS tags (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				text TEXT NOT NULL,
+				text TEXT UNIQUE NOT NULL,
 				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 			)
@@ -35,7 +35,9 @@ func RunMigration(db *sql.DB) error {
 				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
 				FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE,
-				FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+				FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+
+				UNIQUE(contact_id, tag_id)
 			)
 		`,
 	}

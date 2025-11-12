@@ -8,5 +8,8 @@ Content-Type: application/json
 {
   "first_name": "John",
   "last_name": "Doe",
-  "email":  "john@codersgyan.com"
+  "email": "john1@codersgyan.com",
+  "tags": [
+    { "text": "waitlist:golang" }
+  ]
 }
